@@ -10,6 +10,14 @@ def test_api_root():
     assert response.status_code == 200
     assert response.json()["status"] == "online"
 
+def test_api_health():
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["database"] == "connected"
+    assert data["engine"] in ("sqlite", "postgresql")
+
 def test_api_login_success():
     response = client.post("/api/auth/login", json={
         "usuario": "admin_doctor",

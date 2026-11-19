@@ -1,4 +1,5 @@
-﻿import sys
+﻿import os
+import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -7,9 +8,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from config.database import init_db, get_db
+from config.database import init_db, get_db, check_db_connection
 from src.models.usuario import Usuario
 from src.utils.seed_data import seed_database
 from api.routes import auth, citas, pacientes, inventario
@@ -54,7 +55,21 @@ def root():
         "documentacion_redoc": "/redoc"
     }
 
+@app.get("/health", tags=["General"])
+def health():
+    try:
+        engine_name = check_db_connection()
+        return {
+            "status": "ok",
+            "database": "connected",
+            "engine": engine_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
+
 if __name__ == "__main__":
     import uvicorn
-    # Permite escuchar en 0.0.0.0 para que celulares en la misma red WiFi o emuladores puedan conectarse
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", "8000"))
+    reload = os.getenv("APP_ENV", "development") != "production"
+    # Permite escuchar en 0.0.0.0 para que Render, celulares en la misma red WiFi o emuladores puedan conectarse
+    uvicorn.run("api.main:app", host="0.0.0.0", port=port, reload=reload)

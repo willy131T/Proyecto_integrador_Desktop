@@ -67,17 +67,21 @@ def seed_database():
                     tratamiento=trat
                 ))
 
+        # Garantiza que los IDs generados para Paciente existan antes de insertar Cita (FK estricta en PostgreSQL)
+        db.flush()
+        pacientes_by_name = {p.nombre: p.id for p in db.query(Paciente).all()}
+
         # 4. Citas Históricas
         citas_iniciales = [
-            (1, "William Eduardo Antonio Marcelo", "Dra. López", "10/05/2026", "10:00", "Limpieza dental (Profilaxis)", "Completada"),
-            (1, "William Eduardo Antonio Marcelo", "Doctor Admin", "15/06/2026", "12:30", "Dolor agudo / Urgencia", "Completada"),
-            (1, "William Eduardo Antonio Marcelo", "Dr. Martínez", "20/07/2026", "16:00", "Ortodoncia (Ajuste / Revision)", "Pendiente"),
-            (2, "Andrés", "Doctor Admin", "01/08/2026", "09:00", "Revisión general", "Pendiente"),
+            ("William Eduardo Antonio Marcelo", "Dra. López", "10/05/2026", "10:00", "Limpieza dental (Profilaxis)", "Completada"),
+            ("William Eduardo Antonio Marcelo", "Doctor Admin", "15/06/2026", "12:30", "Dolor agudo / Urgencia", "Completada"),
+            ("William Eduardo Antonio Marcelo", "Dr. Martínez", "20/07/2026", "16:00", "Ortodoncia (Ajuste / Revision)", "Pendiente"),
+            ("Andrés", "Doctor Admin", "01/08/2026", "09:00", "Revisión general", "Pendiente"),
         ]
-        for pid, pnom, doc, fec, hor, mot, est in citas_iniciales:
+        for pnom, doc, fec, hor, mot, est in citas_iniciales:
             if not db.query(Cita).filter(Cita.nombre_paciente == pnom, Cita.fecha == fec, Cita.hora == hor).first():
                 db.add(Cita(
-                    id_paciente=pid,
+                    id_paciente=pacientes_by_name.get(pnom),
                     nombre_paciente=pnom,
                     doctor=doc,
                     fecha=fec,

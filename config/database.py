@@ -1,21 +1,22 @@
 ﻿import logging
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from config.settings import DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
-connect_args = {}
+engine_kwargs = {
+    "pool_pre_ping": True,
+    "echo": False,
+}
 if DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # Reciclar conexiones antes de que el compute serverless (Neon/Supabase) las cierre por inactividad
+    engine_kwargs["pool_recycle"] = 300
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    echo=False
-)
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
 Base = declarative_base()
@@ -32,6 +33,12 @@ def get_db():
         raise
     finally:
         db.close()
+
+def check_db_connection() -> str:
+    """Verifica conectividad real a la BD y retorna el motor activo ('sqlite' o 'postgresql')."""
+    with get_db() as db:
+        db.execute(text("SELECT 1"))
+    return "sqlite" if DATABASE_URL.startswith("sqlite") else "postgresql"
 
 def init_db():
     import src.models
