@@ -53,14 +53,20 @@ El proyecto está desacoplado bajo principios de Arquitectura Limpia:
 1. **Regla de Git**: La rama `main` está protegida. NUNCA hagas push directo a `main`. Todo cambio se realiza en una rama propia (`git checkout -b feature/nombre-tarea`) y se sube mediante Pull Request.
 2. **Separación de Capas**: NUNCA coloques consultas SQL ni lógica de negocio dentro de los archivos de la interfaz gráfica (`src/ui/`). Toda regla de negocio debe ir en `src/services/` y ser consumida por la UI o por la API.
 3. **Manejo de Secretos**: NUNCA escribas contraseñas ni URLs de bases de datos hardcodeadas en el código. Se leen siempre desde `.env`.
-4. **Verificación**: Antes de solicitar un Pull Request, ejecuta siempre la suite de pruebas unitarias con `pytest` en la terminal. Todas las 14 pruebas deben pasar en verde.
+4. **Verificación**: Antes de solicitar un Pull Request, ejecuta siempre la suite de pruebas unitarias con `pytest` en la terminal (con `.env` apuntando a SQLite local). Todas las 15 pruebas deben pasar en verde.
 
 ---
 
-## 🛠️ 5. Comandos de Referencia Rápida
+## 🛠️ 5. Comandos de Referencia Rápida y Producción en la Nube
 - Activar entorno: `.\venv\Scripts\Activate.ps1`
 - Ejecutar App de Escritorio: `python main.py`
 - Ejecutar Servidor API: `python -m uvicorn api.main:app --reload` (Documentación en `http://127.0.0.1:8000/docs`)
-- Ejecutar Pruebas: `pytest`
+- Ejecutar Pruebas: `pytest` *(15 pruebas en verde; ejecutar siempre con `.env` apuntando a SQLite local, nunca a Neon producción)*
+
+### Producción en la Nube (Live)
+- **Backend FastAPI (Render):** https://odontocloud-api.onrender.com
+- **Swagger Docs:** https://odontocloud-api.onrender.com/docs
+- **Health Check (`/health`):** `{"status":"ok","database":"connected","engine":"postgresql"}`
+- **Base de Datos Cloud:** Neon PostgreSQL (`odontocloud-db`, región `AWS US East 1`), configurada en `.env` local y en Render (nunca expongas `DATABASE_URL` en commits).
 
 Ayúdame a [DESCRIBE TU TAREA AQUÍ, EJ: agregar un nuevo reporte en PDF / conectar un nuevo endpoint / diseñar una vista] respetando estrictamente esta arquitectura.

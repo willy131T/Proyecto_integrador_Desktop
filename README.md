@@ -54,6 +54,17 @@ python main.py
 ```powershell
 pytest
 ```
+*(Importante: ejecuta `pytest` con `.env` apuntando a SQLite local o vacío, nunca sobre la base PostgreSQL de producción para no insertar registros de prueba).*
+
+---
+
+## ☁️ Producción en la Nube (Live)
+
+- **Backend API (Render):** https://odontocloud-api.onrender.com
+- **Documentación Swagger:** https://odontocloud-api.onrender.com/docs
+- **Health Check:** https://odontocloud-api.onrender.com/health (`{"status":"ok","database":"connected","engine":"postgresql"}`)
+- **Base de Datos Cloud:** Neon PostgreSQL (`odontocloud-db`, región `AWS US East 1`) configurado vía `.env` (nunca se versionan contraseñas ni `DATABASE_URL`).
+- **Suite Verificada:** 15 pruebas automatizadas `pytest` (`test_api.py` incluyendo `test_api_health` y `test_services.py`).
 
 ---
 
