@@ -4,6 +4,7 @@ from src.models.paciente import Paciente
 from src.models.cita import Cita
 from src.models.inventario import Inventario
 from src.models.diagnostico import Diagnostico
+from src.models.pago import Pago
 
 __all__ = [
     "TimeStampedModel",
@@ -12,4 +13,5 @@ __all__ = [
     "Cita",
     "Inventario",
     "Diagnostico",
+    "Pago",
 ]

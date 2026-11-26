@@ -64,7 +64,8 @@ pytest
 - **Documentación Swagger:** https://odontocloud-api.onrender.com/docs
 - **Health Check:** https://odontocloud-api.onrender.com/health (`{"status":"ok","database":"connected","engine":"postgresql"}`)
 - **Base de Datos Cloud:** Neon PostgreSQL (`odontocloud-db`, región `AWS US East 1`) configurado vía `.env` (nunca se versionan contraseñas ni `DATABASE_URL`).
-- **Suite Verificada:** 15 pruebas automatizadas `pytest` (`test_api.py` incluyendo `test_api_health` y `test_services.py`).
+- **Suite Verificada:** 21 pruebas automatizadas `pytest` (`test_api.py`, `test_services.py` y `test_pagos.py`).
+- **Documentación de Usuario:** Consulta [MANUAL_USUARIO.md](MANUAL_USUARIO.md) para guías de Doctor y Paciente.
 
 ---
 

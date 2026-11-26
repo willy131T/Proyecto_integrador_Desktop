@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config.database import init_db, get_db, check_db_connection
 from src.models.usuario import Usuario
 from src.utils.seed_data import seed_database
-from api.routes import auth, citas, pacientes, inventario
+from api.routes import auth, citas, pacientes, inventario, pagos
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +45,7 @@ app.include_router(auth.router)
 app.include_router(citas.router)
 app.include_router(pacientes.router)
 app.include_router(inventario.router)
+app.include_router(pagos.router)
 
 @app.get("/", tags=["General"])
 def root():

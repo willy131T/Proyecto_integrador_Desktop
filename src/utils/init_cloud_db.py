@@ -11,6 +11,7 @@ from src.models.paciente import Paciente
 from src.models.cita import Cita
 from src.models.inventario import Inventario
 from src.models.diagnostico import Diagnostico
+from src.models.pago import Pago
 from src.utils.seed_data import seed_database
 
 
@@ -26,6 +27,7 @@ def main():
             "citas": db.query(Cita).count(),
             "inventario": db.query(Inventario).count(),
             "diagnosticos": db.query(Diagnostico).count(),
+            "pagos": db.query(Pago).count(),
         }
 
     print(f"[OK] Motor de base de datos activo: {engine_name}")

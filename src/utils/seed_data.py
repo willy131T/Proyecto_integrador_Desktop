@@ -8,6 +8,7 @@ from src.models.paciente import Paciente
 from src.models.cita import Cita
 from src.models.inventario import Inventario
 from src.models.diagnostico import Diagnostico
+from src.models.pago import Pago
 from src.services.auth_service import hash_password
 
 def seed_database():
@@ -136,6 +137,16 @@ def seed_database():
         for nom, cant, cat in materiales:
             if not db.query(Inventario).filter(Inventario.nombre == nom).first():
                 db.add(Inventario(nombre=nom, cantidad=cant, categoria=cat))
+
+        # 7. Pagos Iniciales (Finanzas y Saldos)
+        pagos_iniciales = [
+            ("William Eduardo Antonio Marcelo", "Limpieza dental (Profilaxis)", 650.0, "Tarjeta", "Pagado", "10/05/2026"),
+            ("William Eduardo Antonio Marcelo", "Ortodoncia (Ajuste / Revision)", 850.0, "Transferencia", "Pendiente", "20/07/2026"),
+            ("Andrés", "Revisión general", 450.0, "Efectivo", "Pagado", "01/08/2026"),
+        ]
+        for pnom, conc, monto, met, est, fec in pagos_iniciales:
+            if not db.query(Pago).filter(Pago.nombre_paciente == pnom, Pago.concepto == conc, Pago.fecha == fec).first():
+                db.add(Pago(nombre_paciente=pnom, concepto=conc, monto=monto, metodo_pago=met, estado=est, fecha=fec))
 
     print("✅ Carga masiva de datos iniciales completada exitosamente.")
 

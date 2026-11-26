@@ -53,7 +53,7 @@ El proyecto está desacoplado bajo principios de Arquitectura Limpia:
 1. **Regla de Git**: La rama `main` está protegida. NUNCA hagas push directo a `main`. Todo cambio se realiza en una rama propia (`git checkout -b feature/nombre-tarea`) y se sube mediante Pull Request.
 2. **Separación de Capas**: NUNCA coloques consultas SQL ni lógica de negocio dentro de los archivos de la interfaz gráfica (`src/ui/`). Toda regla de negocio debe ir en `src/services/` y ser consumida por la UI o por la API.
 3. **Manejo de Secretos**: NUNCA escribas contraseñas ni URLs de bases de datos hardcodeadas en el código. Se leen siempre desde `.env`.
-4. **Verificación**: Antes de solicitar un Pull Request, ejecuta siempre la suite de pruebas unitarias con `pytest` en la terminal (con `.env` apuntando a SQLite local). Todas las 15 pruebas deben pasar en verde.
+4. **Verificación**: Antes de solicitar un Pull Request, ejecuta siempre la suite de pruebas unitarias con `pytest` en la terminal (con `.env` apuntando a SQLite local). Todas las 21 pruebas deben pasar en verde.
 
 ---
 

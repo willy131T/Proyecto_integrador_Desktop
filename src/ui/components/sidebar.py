@@ -9,7 +9,7 @@ class Sidebar(ctk.CTkFrame):
         self.on_logout = on_logout
         self.buttons = {}
 
-        self.grid_rowconfigure(8, weight=1)
+        self.grid_rowconfigure(10, weight=1)
 
         # Encabezado con Logotipo
         self.lbl_logo = ctk.CTkLabel(
@@ -58,7 +58,9 @@ class Sidebar(ctk.CTkFrame):
                 ("citas", "📅 Agenda de Citas", 4),
                 ("pacientes", "👥 Expedientes", 5),
                 ("inventario", "📦 Inventario", 6),
-                ("nuevo_doctor", "👨‍⚕️ Equipo Médico", 7),
+                ("pagos", "💳 Pagos y Finanzas", 7),
+                ("bi_reportes", "📈 BI y Reportes", 8),
+                ("nuevo_doctor", "👨‍⚕️ Equipo Médico", 9),
             ]
         else:
             nav_items = [
@@ -90,7 +92,7 @@ class Sidebar(ctk.CTkFrame):
             command=self._toggle_theme
         )
         self.theme_switch.select()
-        self.theme_switch.grid(row=9, column=0, padx=20, pady=(0, 15), sticky="w")
+        self.theme_switch.grid(row=11, column=0, padx=20, pady=(0, 15), sticky="w")
 
         # Botón Cerrar Sesión
         self.btn_logout = ctk.CTkButton(
@@ -103,7 +105,7 @@ class Sidebar(ctk.CTkFrame):
             height=36,
             command=self.on_logout
         )
-        self.btn_logout.grid(row=10, column=0, padx=15, pady=(0, 20), sticky="ew")
+        self.btn_logout.grid(row=12, column=0, padx=15, pady=(0, 20), sticky="ew")
 
     def _handle_click(self, view_id):
         for vid, btn in self.buttons.items():

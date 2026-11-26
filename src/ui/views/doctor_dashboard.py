@@ -10,6 +10,8 @@ from src.services.inventario_service import InventarioService
 from src.services.diagnostico_service import DiagnosticoService
 from src.services.pdf_service import PDFService
 from src.services.auth_service import AuthService
+from src.services.pago_service import PagoService
+from src.services.export_service import ExportService
 
 class DoctorDashboard(ctk.CTkFrame):
     def __init__(self, parent, usuario):
@@ -34,6 +36,10 @@ class DoctorDashboard(ctk.CTkFrame):
             self._render_pacientes()
         elif view_id == "inventario":
             self._render_inventario()
+        elif view_id == "pagos":
+            self._render_pagos()
+        elif view_id == "bi_reportes":
+            self._render_bi_reportes()
         elif view_id == "nuevo_doctor":
             self._render_nuevo_doctor_modal()
 
@@ -124,16 +130,49 @@ class DoctorDashboard(ctk.CTkFrame):
         )
         btn_nueva.pack(side="right")
 
-        scroll = ctk.CTkScrollableFrame(self.content_frame, fg_color=("#F8FAFC", "#1E293B"))
-        scroll.pack(fill="both", expand=True)
+        btn_csv_citas = ctk.CTkButton(
+            header,
+            text="📥 Exportar CSV",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=THEME["secondary"],
+            command=lambda: self._exportar_csv_archivo("citas")
+        )
+        btn_csv_citas.pack(side="right", padx=(0, 8))
 
+        filter_bar = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        filter_bar.pack(fill="x", pady=(0, 10))
+
+        doctores_filtro = ["Todos"] + AuthService.obtener_doctores()
+        self.combo_cita_doc = ctk.CTkComboBox(filter_bar, values=doctores_filtro, width=180, command=lambda _: self._cargar_lista_citas())
+        self.combo_cita_doc.set("Todos")
+        self.combo_cita_doc.pack(side="left", padx=(0, 8))
+
+        self.combo_cita_estado = ctk.CTkComboBox(filter_bar, values=["Todos", "Pendiente", "Completada"], width=150, command=lambda _: self._cargar_lista_citas())
+        self.combo_cita_estado.set("Todos")
+        self.combo_cita_estado.pack(side="left")
+
+        self.citas_scroll = ctk.CTkScrollableFrame(self.content_frame, fg_color=("#F8FAFC", "#1E293B"))
+        self.citas_scroll.pack(fill="both", expand=True)
+        self._cargar_lista_citas()
+
+    def _cargar_lista_citas(self):
+        for w in self.citas_scroll.winfo_children():
+            w.destroy()
+
+        doc_filtro = self.combo_cita_doc.get()
+        est_filtro = self.combo_cita_estado.get()
         citas = CitaService.obtener_todas_las_citas()
+        if doc_filtro != "Todos":
+            citas = [c for c in citas if c["doctor"] == doc_filtro]
+        if est_filtro != "Todos":
+            citas = [c for c in citas if c["estado"] == est_filtro]
+
         if not citas:
-            ctk.CTkLabel(scroll, text="No hay citas programadas.").pack(pady=40)
+            ctk.CTkLabel(self.citas_scroll, text="No hay citas que coincidan con el filtro.").pack(pady=40)
             return
 
         for c in citas:
-            row = ctk.CTkFrame(scroll, fg_color=("#FFFFFF", "#0F172A"), corner_radius=8)
+            row = ctk.CTkFrame(self.citas_scroll, fg_color=("#FFFFFF", "#0F172A"), corner_radius=8)
             row.pack(fill="x", padx=6, pady=4)
 
             ctk.CTkLabel(row, text=f"📅 {c['fecha']} [{c['hora']}]", font=ctk.CTkFont(size=12, weight="bold"), width=150, anchor="w").pack(side="left", padx=12, pady=12)
@@ -451,6 +490,15 @@ class DoctorDashboard(ctk.CTkFrame):
         )
         btn_nuevo.pack(side="right")
 
+        btn_csv_inv = ctk.CTkButton(
+            header,
+            text="📥 Exportar CSV",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=THEME["secondary"],
+            command=lambda: self._exportar_csv_archivo("inventario")
+        )
+        btn_csv_inv.pack(side="right", padx=(0, 8))
+
         # Filtros de Categoría y Búsqueda
         filter_bar = ctk.CTkFrame(self.content_frame, fg_color="transparent")
         filter_bar.pack(fill="x", pady=(0, 12))
@@ -745,3 +793,196 @@ class DoctorDashboard(ctk.CTkFrame):
                 self.show_view("nuevo_doctor")
             else:
                 messagebox.showerror("No se pudo dar de baja", mensaje)
+
+    # ==========================================
+    # 6. MÓDULO DE PAGOS Y FINANZAS
+    # ==========================================
+    def _exportar_csv_archivo(self, tipo: str):
+        try:
+            if tipo == "citas":
+                path = ExportService.exportar_citas_csv()
+            elif tipo == "inventario":
+                path = ExportService.exportar_inventario_csv()
+            else:
+                path = ExportService.exportar_pagos_csv()
+            messagebox.showinfo("CSV Exportado", f"Archivo generado con éxito:\n\n{path}")
+        except Exception as e:
+            messagebox.showerror("Error al exportar CSV", str(e))
+
+    def _render_pagos(self):
+        header = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 15))
+
+        ctk.CTkLabel(header, text="Pagos, Cobros y Facturación", font=ctk.CTkFont(size=20, weight="bold")).pack(side="left")
+
+        ctk.CTkButton(
+            header,
+            text="➕ Registrar Cobro",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=THEME["primary"],
+            command=self._modal_registrar_pago,
+        ).pack(side="right")
+
+        ctk.CTkButton(
+            header,
+            text="📥 Exportar CSV",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=THEME["secondary"],
+            command=lambda: self._exportar_csv_archivo("pagos"),
+        ).pack(side="right", padx=(0, 8))
+
+        resumen = PagoService.obtener_resumen_financiero()
+        cards = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        cards.pack(fill="x", pady=(0, 15))
+        cards.grid_columnconfigure((0, 1, 2), weight=1)
+
+        kpis = [
+            ("💰 Total Recaudado", f"${resumen['total_recaudado']:,.2f}", "#10B981", 0),
+            ("⏳ Saldo Pendiente", f"${resumen['total_pendiente']:,.2f}", "#F59E0B", 1),
+            ("🧾 Movimientos", str(resumen["cantidad_pagos"]), "#0284C7", 2),
+        ]
+        for titulo, valor, color, col in kpis:
+            card = ctk.CTkFrame(cards, fg_color=("#F8FAFC", "#1E293B"), corner_radius=12, border_width=1, border_color=("#E2E8F0", "#334155"))
+            card.grid(row=0, column=col, padx=6, sticky="ew")
+            ctk.CTkLabel(card, text=titulo, font=ctk.CTkFont(size=11), text_color="#64748B").pack(anchor="w", padx=14, pady=(10, 2))
+            ctk.CTkLabel(card, text=valor, font=ctk.CTkFont(size=22, weight="bold"), text_color=color).pack(anchor="w", padx=14, pady=(0, 10))
+
+        scroll = ctk.CTkScrollableFrame(self.content_frame, fg_color=("#F8FAFC", "#1E293B"))
+        scroll.pack(fill="both", expand=True)
+
+        pagos = PagoService.obtener_todos_los_pagos()
+        if not pagos:
+            ctk.CTkLabel(scroll, text="No hay pagos registrados todavía.").pack(pady=30)
+            return
+
+        for p in pagos:
+            row = ctk.CTkFrame(scroll, fg_color=("#FFFFFF", "#0F172A"), corner_radius=8)
+            row.pack(fill="x", padx=6, pady=4)
+
+            ctk.CTkLabel(row, text=f"👤 {p['nombre_paciente']}", font=ctk.CTkFont(size=12, weight="bold"), width=180, anchor="w").pack(side="left", padx=10, pady=10)
+            ctk.CTkLabel(row, text=f"{p['concepto']} ({p['metodo_pago']})", font=ctk.CTkFont(size=11), anchor="w").pack(side="left", padx=6, fill="x", expand=True)
+            ctk.CTkLabel(row, text=f"${p['monto']:,.2f}", font=ctk.CTkFont(size=12, weight="bold"), text_color="#10B981" if p["estado"] == "Pagado" else "#F59E0B", width=95).pack(side="left", padx=6)
+
+            if p["estado"] == "Pendiente":
+                ctk.CTkButton(
+                    row,
+                    text="✓ Liquidar",
+                    width=75,
+                    height=26,
+                    font=ctk.CTkFont(size=10),
+                    fg_color="#10B981",
+                    command=lambda pid=p["id"]: self._liquidar_pago(pid),
+                ).pack(side="right", padx=6)
+
+            ctk.CTkButton(
+                row,
+                text="🧾 Recibo PDF",
+                width=90,
+                height=26,
+                font=ctk.CTkFont(size=10),
+                fg_color="#0284C7",
+                command=lambda pago=p: self._generar_recibo_pago_pdf(pago),
+            ).pack(side="right", padx=6)
+
+    def _liquidar_pago(self, id_pago: int):
+        PagoService.marcar_como_pagado(id_pago)
+        self.show_view("pagos")
+
+    def _generar_recibo_pago_pdf(self, pago: dict):
+        try:
+            path = PDFService.generar_recibo_pago(
+                paciente_nombre=pago["nombre_paciente"],
+                concepto=pago["concepto"],
+                monto=pago["monto"],
+                metodo_pago=pago["metodo_pago"],
+                estado=pago["estado"],
+                fecha=pago["fecha"],
+                folio=f"P-{pago['id']}",
+            )
+            messagebox.showinfo("Recibo PDF", f"Recibo generado:\n\n{path}")
+            if os.name == "nt":
+                os.startfile(path)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _modal_registrar_pago(self):
+        modal = ctk.CTkToplevel(self)
+        modal.title("Registrar Pago Odontológico")
+        modal.geometry("420x430")
+        modal.grab_set()
+
+        ctk.CTkLabel(modal, text="Nuevo Registro de Pago", font=ctk.CTkFont(size=17, weight="bold")).pack(pady=(18, 12))
+        pacientes = [p["nombre"] for p in PacienteService.obtener_pacientes()] or ["Paciente General"]
+
+        combo_pac = ctk.CTkComboBox(modal, values=pacientes, width=350)
+        combo_pac.pack(pady=6)
+        entry_conc = ctk.CTkEntry(modal, width=350, placeholder_text="Concepto (ej. Limpieza / Resina)")
+        entry_conc.pack(pady=6)
+        entry_monto = ctk.CTkEntry(modal, width=350, placeholder_text="Monto MXN (ej. 650.00)")
+        entry_monto.pack(pady=6)
+        combo_met = ctk.CTkComboBox(modal, values=["Efectivo", "Tarjeta", "Transferencia"], width=350)
+        combo_met.pack(pady=6)
+        combo_est = ctk.CTkComboBox(modal, values=["Pagado", "Pendiente"], width=350)
+        combo_est.pack(pady=6)
+
+        def _guardar_pago():
+            try:
+                PagoService.registrar_pago(
+                    nombre_paciente=combo_pac.get().strip(),
+                    concepto=entry_conc.get().strip(),
+                    monto=float(entry_monto.get().strip()),
+                    metodo_pago=combo_met.get(),
+                    estado=combo_est.get(),
+                )
+                modal.destroy()
+                self.show_view("pagos")
+            except Exception as e:
+                messagebox.showwarning("Validación", f"Verifica los datos: {e}")
+
+        ctk.CTkButton(modal, text="Guardar Pago", fg_color=THEME["primary"], height=36, command=_guardar_pago).pack(pady=15)
+
+    # ==========================================
+    # 7. BI, GRÁFICAS Y REPORTES
+    # ==========================================
+    def _render_bi_reportes(self):
+        header = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 12))
+        ctk.CTkLabel(header, text="Business Intelligence y Reportes", font=ctk.CTkFont(size=20, weight="bold")).pack(side="left")
+
+        stats = ExportService.obtener_estadisticas_bi()
+        scroll = ctk.CTkScrollableFrame(self.content_frame, fg_color=("#F8FAFC", "#1E293B"))
+        scroll.pack(fill="both", expand=True)
+
+        # Gráfica nativa de Citas por Doctor
+        ctk.CTkLabel(scroll, text="📊 Distribución de Citas por Odontólogo", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w", padx=14, pady=(12, 6))
+        total_citas = max(stats["total_citas"], 1)
+        for doc, cant in stats["citas_por_doctor"].items():
+            row = ctk.CTkFrame(scroll, fg_color=("#FFFFFF", "#0F172A"), corner_radius=8)
+            row.pack(fill="x", padx=14, pady=3)
+            ctk.CTkLabel(row, text=f"{doc}: {cant} citas", font=ctk.CTkFont(size=11, weight="bold"), width=220, anchor="w").pack(side="left", padx=12, pady=8)
+            bar = ctk.CTkProgressBar(row, progress_color=THEME["primary"])
+            bar.set(cant / total_citas)
+            bar.pack(side="left", fill="x", expand=True, padx=12)
+
+        # Ingresos por método de pago
+        ctk.CTkLabel(scroll, text="💳 Ingresos Recaudados por Método de Pago", font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w", padx=14, pady=(16, 6))
+        tot_rec = max(stats["resumen_financiero"]["total_recaudado"], 1.0)
+        for met, monto in stats["resumen_financiero"]["por_metodo"].items():
+            row = ctk.CTkFrame(scroll, fg_color=("#FFFFFF", "#0F172A"), corner_radius=8)
+            row.pack(fill="x", padx=14, pady=3)
+            ctk.CTkLabel(row, text=f"{met}: ${monto:,.2f}", font=ctk.CTkFont(size=11, weight="bold"), width=220, anchor="w").pack(side="left", padx=12, pady=8)
+            bar = ctk.CTkProgressBar(row, progress_color="#10B981")
+            bar.set(monto / tot_rec)
+            bar.pack(side="left", fill="x", expand=True, padx=12)
+
+        # Alertas de Stock Crítico
+        ctk.CTkLabel(scroll, text=f"⚠️ Alertas de Stock Crítico (<= 15 unidades): {len(stats['alertas_stock'])}", font=ctk.CTkFont(size=15, weight="bold"), text_color="#EF4444" if stats["alertas_stock"] else "#10B981").pack(anchor="w", padx=14, pady=(16, 6))
+        for item in stats["alertas_stock"][:6]:
+            ctk.CTkLabel(scroll, text=f"• {item['nombre']} ({item['categoria']}): {item['cantidad']} unidades", font=ctk.CTkFont(size=11)).pack(anchor="w", padx=24, pady=2)
+
+        # Botones de Exportación CSV
+        exp_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        exp_frame.pack(fill="x", padx=14, pady=18)
+        ctk.CTkButton(exp_frame, text="📥 Exportar Citas CSV", fg_color=THEME["primary"], command=lambda: self._exportar_csv_archivo("citas")).pack(side="left", padx=6)
+        ctk.CTkButton(exp_frame, text="📥 Exportar Inventario CSV", fg_color=THEME["secondary"], command=lambda: self._exportar_csv_archivo("inventario")).pack(side="left", padx=6)
+        ctk.CTkButton(exp_frame, text="📥 Exportar Pagos CSV", fg_color="#0F766E", command=lambda: self._exportar_csv_archivo("pagos")).pack(side="left", padx=6)
